@@ -1,61 +1,46 @@
 defmodule Markov do
 
-  defstruct markov_map: HashDict.new()
-
-  # TODO: should I use atoms here? Does it matter?
-  # __START__
-  # __END__
-
-  def add_text(text) do
-    add_words(["__START__"|String.split(text)])
-  end # def add_text
-
-  
-  def add_words(words) when (length words) == 1 do
-    [first|_] = words
-    add_pair(first,"__END__")
+  def new(text) do
+    m = HashDict.new
+    add_text m, text
   end
 
-  def add_words(words) do
-    [first|rest] = words
-    [second|_] = rest
-    add_pair(first,second)
-    add_words rest
-  end # def add_words
+  def add_text(markov_map, text) do
+    words = List.flatten [:start, String.split(text), :end]
+    add_words markov_map, words
+  end
 
-  def add_pair(first, second) do
-    Dict.update(markov_map, first, [second], fn words -> [second|words] end )
-  end # def add_pair
+  def add_words(markov_map, [:start | [first_word|_]=rest]) do
+    m = add_pair markov_map, :start, first_word
+    add_words m, rest
+  end
 
-  def dump do
-    IO.puts markov_map
+  def add_words(markov_map, [last_word, :end]) do
+    add_pair markov_map, last_word, :end
+  end
+
+  def add_words(markov_map, [word | [word_after|_]=rest]) do
+    m = add_pair markov_map, word, word_after
+    add_words m, rest
+  end
+
+  def add_pair(markov_map, first, second) do
+    Dict.update markov_map, first, [second], fn words -> [second|words] end
+  end
+
+  def dump(markov_map) do
+    IO.inspect markov_map
   end
 
 end # the Markov module declaration
 
-mark = Markov.new()
+mark = HashDict.new()
 
-Markov.add_text("this is a long text of words that is not too full of words there are more")
-Markov.dump
+mark = Markov.new("this is a long text of words that is not too full of words there are more")
+Markov.dump(mark)
 
-# call the program with a file name.
-# use the file as the source.
-# TODO: customize for tweets?
-# take each line
-#  split into words
-#  store word one : word two
-#  if a word is the next of the sentence or tweet, note that word : XX_END_XX
-# after all of that
-#
-# x:y
-# x:y
-# x:z
-# x:a
-# x:y
-# x:XX_END_XX
+mark = Markov.new("first fa1 first fa2 second sa1 first fa3")
+Markov.dump(mark)
 
-# randomly pick a starting word, print it.
-# TODO: do you track starting words?
-# randomly generate a number, find the next word, print it, use its
-# possibilities to find the next.
-# keep going into you get to an end word.
+mark = Markov.add_text(mark, "first faa1")
+Markov.dump(mark)
