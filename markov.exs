@@ -1,31 +1,36 @@
 defmodule Markov do
 
   def new(text) do
-    m = HashDict.new
-    add_text m, text
+    HashDict.new
+    |> add_text text
   end
 
   def add_text(markov_map, text) do
     words = List.flatten [:start, String.split(text), :end]
-    add_words markov_map, words
+    markov_map
+    |> add_words(words)
   end
 
   def add_words(markov_map, [:start | [first_word|_]=rest]) do
-    m = add_pair markov_map, :start, first_word
-    add_words m, rest
+    markov_map
+    |> add_pair(:start, first_word)
+    |> add_words(rest)
   end
 
   def add_words(markov_map, [last_word, :end]) do
-    add_pair markov_map, last_word, :end
+    markov_map
+    |> add_pair(last_word, :end)
   end
 
   def add_words(markov_map, [word | [word_after|_]=rest]) do
-    m = add_pair markov_map, word, word_after
-    add_words m, rest
+    markov_map
+    |> add_pair(word, word_after)
+    |> add_words(rest)
   end
 
   def add_pair(markov_map, first, second) do
-    Dict.update markov_map, first, [second], fn words -> [second|words] end
+    markov_map
+    |> Dict.update first, [second], fn words -> [second|words] end
   end
 
   def dump(markov_map) do
@@ -48,3 +53,5 @@ text = "first faa1"
 IO.puts "\nAdding to existing Markov with '#{text}'"
 mark = Markov.add_text(mark, text)
 Markov.dump(mark)
+
+{:ok, agent} = Agent.start_link fn -> [] end
