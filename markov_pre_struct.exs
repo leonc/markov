@@ -1,52 +1,34 @@
 defmodule Markov do
 
-  def new() do
-    HashDict.new()
-  end
-
   # TODO: should I use atoms here? Does it matter?
   # __START__
   # __END__
 
-  # a global hash, where the first word
-  # is the key, and value is an array of some lenght with
-  markov_map = HashDict.new()
-
-  # reset the database of word pairs
-  def init_map do
-    markov_map = HashDict.new()
-  end # def init_map
-
-  def add_text(text) do
-    add_words(["__START__"|String.split(text)])
+  def add_text(m,text) do
+    add_words(m,["__START__"|String.split(text)])
   end # def add_text
-
   
-  def add_words(words) when length words == 1 do
+  def add_words(m,words) when (length words) == 1 do
+    IO.puts "got here!"
     [first|_] = words
-    add_pair(first,"__END__")
+    add_pair(m,first,"__END__")
   end
 
-  def add_words(words) do
+  def add_words(m,words) do
     [first|rest] = words
     [second|_] = rest
-    add_pair(first,second)
-    add_words rest
+    m = add_pair(m,first,second)
+    add_words(m,rest)
   end # def add_words
 
-  def add_pair(first, second) do
-    Dict.update(markov_map, first, [second], fn words -> [second|words] end )
+  def add_pair(m,first, second) do
+    Dict.update(m, first, [second], fn words -> [second|words] end )
   end # def add_pair
-
-  def dump do
-    IO.puts markov_map
-  end
 
 end # the Markov module declaration
 
-m = Markov.new()
-m = m.add_text("this is a long text of words that is not too full of words there are more")
-m.dump
+m = HashDict.new()
+m = Markov.add_text(m,"this is a long text of words that is not too full of words there are more")
 
 # call the program with a file name.
 # use the file as the source.
