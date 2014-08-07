@@ -34,13 +34,17 @@ defmodule Markov do
 
 end # the Markov module declaration
 
-mark = HashDict.new()
-
-mark = Markov.new("this is a long text of words that is not too full of words there are more")
+text = "this is a long text of words that is not too full of words there are more"
+IO.puts "\nCreating new Markov with '#{text}'"
+mark = Markov.new text
 Markov.dump(mark)
 
-mark = Markov.new("first fa1 first fa2 second sa1 first fa3")
+text = "first fa1 first fa2 second sa1 first fa3"
+IO.puts "\n\nCreating new Markov with '#{text}'"
+mark = Markov.new text
 Markov.dump(mark)
 
-mark = Markov.add_text(mark, "first faa1")
+text = "first faa1"
+IO.puts "\nAdding to existing Markov with '#{text}'"
+mark = Markov.add_text(mark, text)
 Markov.dump(mark)
