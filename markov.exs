@@ -1,6 +1,6 @@
 defmodule Markov do
 
-  import Random
+  # import Random
   # import ExJSON
 
   def new(text) do
@@ -44,7 +44,7 @@ defmodule Markov do
   def generate(markov_map) do
     #TODO: i don't like the repition with the logic in the called module
     {:ok, nexts} = Dict.fetch(markov_map, :start)
-    word = sample(nexts)
+    word = Random.sample(nexts)
     generate_words(markov_map, word)
   end
 
@@ -94,8 +94,7 @@ defmodule Markov do
 
   defp generate_words(markov_map, word) do
     {:ok, nexts} = Dict.fetch(markov_map, word)
-    # use the Random module
-    next = sample(nexts)
+    next = Random.sample(nexts)
     # IO.puts "the word is #{word} and its possible followers are:"
     # IO.inspect Dict.fetch(markov_map, next)
     "#{word} " <> generate_words(markov_map, next)
@@ -124,19 +123,5 @@ mark = Markov.new
 mark = Markov.add_files(mark, files)
 Markov.generate(mark, times)
 
-# Markov.dump(mark)
-
-
-
-#text = "this is a long text of words that is not too full of words there are more"
-#mark = Markov.new text
-#text = "first fa1 first fa2 second sa1 first fa3"
-#mark = Markov.add_text(mark, text)
-
-#Markov.dump(mark)
-
-#IO.puts Markov.generate(mark)
-
 # {:ok, agent} = Agent.start_link fn -> [] end
 
-# mark = Markov.new "foo bar baz"
