@@ -1,7 +1,7 @@
 defmodule Markov do
 
   import Random
-  import ExJSON
+  # import ExJSON
 
   def new(text) do
     HashDict.new
@@ -17,22 +17,23 @@ defmodule Markov do
     words = List.flatten [:start, String.split(text), :end]
     # IO.inspect words
     markov_map
-    |> add_words(words)
+      |> add_words(words)
   end
 
   def add_files(markov_map, [file|rest]) when length(rest) == 0 do
-    IO.puts "adding file #{file}"
-    add_file(markov_map, file)
+    markov_map
+      |> add_file(file)
   end
 
   def add_files(markov_map, [file|rest]) do
-    markov_map = add_file(markov_map, file)
-    add_files(markov_map, rest)
+    markov_map
+      |> add_file(file)
+      |> add_files(rest)
   end
 
   def add_file(markov_map, tweeter_file) do
     contents = File.read! tweeter_file
-    # get rid of the first line
+    # get rid of the first line, which isn't JSON
     [_,json_data] = Regex.run(~r/Grailbird.data.tweets_\d+_\d+ =(.*)/s,contents)
     tweets = ExJSON.parse(json_data, :to_map)
         # IO.puts "about to add tweets to markov_map"
@@ -44,7 +45,15 @@ defmodule Markov do
     #TODO: i don't like the repition with the logic in the called module
     {:ok, nexts} = Dict.fetch(markov_map, :start)
     word = sample(nexts)
-    generate(markov_map, word)
+    generate_words(markov_map, word)
+  end
+
+  def generate(_, times) when times == 0 do
+  end
+
+  def generate(markov_map, times) do
+    IO.puts generate(markov_map)
+    generate(markov_map, times - 1)
   end
 
   def dump(markov_map) do
@@ -79,17 +88,17 @@ defmodule Markov do
   # output
   # #############################################################
 
-  defp generate(_, :end) do
+  defp generate_words(_, :end) do
     ""
   end
 
-  defp generate(markov_map, word) do
+  defp generate_words(markov_map, word) do
     {:ok, nexts} = Dict.fetch(markov_map, word)
     # use the Random module
     next = sample(nexts)
     # IO.puts "the word is #{word} and its possible followers are:"
     # IO.inspect Dict.fetch(markov_map, next)
-    "#{word} " <> generate(markov_map, next)
+    "#{word} " <> generate_words(markov_map, next)
   end
     
   # #############################################################
@@ -101,30 +110,22 @@ defmodule Markov do
 
   defp parse_tweet(markov_map, [tweet|rest]) do
     #IO.puts "tweet to parse is: #{tweet["text"]}"
-    # markov_map 
-    # |> add_text tweet["text"]
-    # |> parse_tweet rest
-    markov_map = add_text(markov_map, tweet["text"])
-    parse_tweet(markov_map, rest)
+    markov_map 
+      |> add_text(tweet["text"])
+      |> parse_tweet(rest)
   end
 
 end # the Markov module declaration
 
+[times|files] = System.argv
+{times,_} = Integer.parse(times)
+
 mark = Markov.new
-mark = Markov.add_files(mark, System.argv)
-# mark = Markov.add_file(mark, "2012_12.js")
-Markov.dump(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
-IO.puts Markov.generate(mark)
+mark = Markov.add_files(mark, files)
+Markov.generate(mark, times)
+
+# Markov.dump(mark)
+
 
 
 #text = "this is a long text of words that is not too full of words there are more"
