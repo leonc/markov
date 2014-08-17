@@ -20,9 +20,10 @@ defmodule Markov do
       |> add_words(words)
   end
 
-  def add_files(markov_map, [file|rest]) when length(rest) == 0 do
+  # used to have a version that was [head|tail] when (length tail) == 0
+  def add_files(markov_map, []) do
+    # have to return the dict
     markov_map
-      |> add_file(file)
   end
 
   def add_files(markov_map, [file|rest]) do
@@ -31,9 +32,16 @@ defmodule Markov do
       |> add_files(rest)
   end
 
+  # if think this would work if we had this function here:
+  # def add_files(markov_map, [file]) do
+    # add_file(markov_map, file)
+  # end
+
   def add_file(markov_map, tweeter_file) do
     contents = File.read! tweeter_file
     # get rid of the first line, which isn't JSON
+    # TODO could read this file line by line, using pattern matching to
+    # find the _one_ line i want.
     [_,json_data] = Regex.run(~r/Grailbird.data.tweets_\d+_\d+ =(.*)/s,contents)
     tweets = ExJSON.parse(json_data, :to_map)
         # IO.puts "about to add tweets to markov_map"
@@ -41,19 +49,21 @@ defmodule Markov do
     parse_tweet(markov_map, tweets)
   end
 
-  def generate(markov_map) do
+  # produce a single tweet
+  def generate_tweet(markov_map) do
     #TODO: i don't like the repition with the logic in the called module
     {:ok, nexts} = Dict.fetch(markov_map, :start)
     word = Random.sample(nexts)
-    generate_words(markov_map, word)
+    next_word(markov_map, word)
   end
 
-  def generate(_, times) when times == 0 do
+  # NOTE: this used to have a when times == 0
+  def generate_tweets(_, 0) do
   end
 
-  def generate(markov_map, times) do
-    IO.puts generate(markov_map)
-    generate(markov_map, times - 1)
+  def generate_tweets(markov_map, times) do
+    IO.puts generate_tweet(markov_map)
+    generate_tweets(markov_map, times - 1)
   end
 
   def dump(markov_map) do
@@ -61,6 +71,11 @@ defmodule Markov do
   end
 
   # ##################################################################
+
+  # TODO: could have these be 
+  # map, [:start, first_word | rest] do
+  # map, [last_word, :end] do
+  # map, [word, word_after|rest] do, here calling with add_pair([word_after|rest]
 
   defp add_words(markov_map, [:start | [first_word|_]=rest]) do
     markov_map
@@ -88,16 +103,16 @@ defmodule Markov do
   # output
   # #############################################################
 
-  defp generate_words(_, :end) do
+  defp next_word(_, :end) do
     ""
   end
 
-  defp generate_words(markov_map, word) do
+  defp next_word(markov_map, word) do
     {:ok, nexts} = Dict.fetch(markov_map, word)
     next = Random.sample(nexts)
     # IO.puts "the word is #{word} and its possible followers are:"
     # IO.inspect Dict.fetch(markov_map, next)
-    "#{word} " <> generate_words(markov_map, next)
+    "#{word} " <> next_word(markov_map, next)
   end
     
   # #############################################################
@@ -121,7 +136,8 @@ end # the Markov module declaration
 
 mark = Markov.new
 mark = Markov.add_files(mark, files)
-Markov.generate(mark, times)
+
+Markov.generate_tweets(mark, times)
 
 # {:ok, agent} = Agent.start_link fn -> [] end
 
