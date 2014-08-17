@@ -12,62 +12,53 @@ defmodule Markov do
     HashDict.new
   end
 
-  def add_text(markov_map, text) do
-    # IO.puts "text to add was: #{text}"
+  def add_text(dict \\ HashDict.new, text) do
     words = List.flatten [:start, String.split(text), :end]
-    # IO.inspect words
-    markov_map
-      |> add_words(words)
+    add_words(dict, words)
   end
 
-  # used to have a version that was [head|tail] when (length tail) == 0
-  def add_files(markov_map, []) do
-    # have to return the dict
-    markov_map
-  end
-
-  def add_files(markov_map, [file|rest]) do
-    markov_map
+  def add_files(dict \\ HashDict.new, [file|rest]) do
+    dict
       |> add_file(file)
       |> add_files(rest)
   end
 
-  # if think this would work if we had this function here:
-  # def add_files(markov_map, [file]) do
-    # add_file(markov_map, file)
-  # end
+  # used to have a version that was [head|tail] when (length tail) == 0
+  def add_files(dict, []) do
+    # have to return the dict
+    dict
+  end
 
-  def add_file(markov_map, tweeter_file) do
+  def add_file(dict \\ HashDict.new, tweeter_file) do
     contents = File.read! tweeter_file
     # get rid of the first line, which isn't JSON
     # TODO could read this file line by line, using pattern matching to
     # find the _one_ line i want.
     [_,json_data] = Regex.run(~r/Grailbird.data.tweets_\d+_\d+ =(.*)/s,contents)
     tweets = ExJSON.parse(json_data, :to_map)
-        # IO.puts "about to add tweets to markov_map"
-        # Markov.dump(markov_map)
-    parse_tweet(markov_map, tweets)
+        # IO.puts "about to add tweets to dict"
+        # Markov.dump(dict)
+    parse_tweet(dict, tweets)
   end
 
   # produce a single tweet
-  def generate_tweet(markov_map) do
+  def generate_tweet(dict) do
     #TODO: i don't like the repition with the logic in the called module
-    {:ok, nexts} = Dict.fetch(markov_map, :start)
+    {:ok, nexts} = Dict.fetch(dict, :start)
     word = Random.sample(nexts)
-    next_word(markov_map, word)
+    next_word(dict, word)
   end
 
-  # NOTE: this used to have a when times == 0
   def generate_tweets(_, 0) do
   end
 
-  def generate_tweets(markov_map, times) do
-    IO.puts generate_tweet(markov_map)
-    generate_tweets(markov_map, times - 1)
+  def generate_tweets(dict, times) do
+    IO.puts generate_tweet(dict)
+    generate_tweets(dict, times - 1)
   end
 
-  def dump(markov_map) do
-    IO.inspect markov_map
+  def dump(dict) do
+    IO.inspect dict
   end
 
   # ##################################################################
@@ -77,25 +68,25 @@ defmodule Markov do
   # map, [last_word, :end] do
   # map, [word, word_after|rest] do, here calling with add_pair([word_after|rest]
 
-  defp add_words(markov_map, [:start | [first_word|_]=rest]) do
-    markov_map
+  defp add_words(dict, [:start | [first_word|_]=rest]) do
+    dict
     |> add_pair(:start, first_word)
     |> add_words(rest)
   end
 
-  defp add_words(markov_map, [last_word, :end]) do
-    markov_map
+  defp add_words(dict, [last_word, :end]) do
+    dict
     |> add_pair(last_word, :end)
   end
 
-  defp add_words(markov_map, [word | [word_after|_]=rest]) do
-    markov_map
+  defp add_words(dict, [word | [word_after|_]=rest]) do
+    dict
     |> add_pair(word, word_after)
     |> add_words(rest)
   end
 
-  defp add_pair(markov_map, first, second) do
-    markov_map
+  defp add_pair(dict, first, second) do
+    dict
     |> Dict.update first, [second], fn words -> [second|words] end
   end
 
@@ -107,24 +98,24 @@ defmodule Markov do
     ""
   end
 
-  defp next_word(markov_map, word) do
-    {:ok, nexts} = Dict.fetch(markov_map, word)
+  defp next_word(dict, word) do
+    {:ok, nexts} = Dict.fetch(dict, word)
     next = Random.sample(nexts)
     # IO.puts "the word is #{word} and its possible followers are:"
-    # IO.inspect Dict.fetch(markov_map, next)
-    "#{word} " <> next_word(markov_map, next)
+    # IO.inspect Dict.fetch(dict, next)
+    "#{word} " <> next_word(dict, next)
   end
     
   # #############################################################
-  # tweet array processing
+  # adding tweet text to the chain data 
   # #############################################################
-  defp parse_tweet(markov_map, tweets) when length(tweets) == 0 do
-    markov_map
+  defp parse_tweet(dict, tweets) when length(tweets) == 0 do
+    dict
   end
 
-  defp parse_tweet(markov_map, [tweet|rest]) do
+  defp parse_tweet(dict, [tweet|rest]) do
     #IO.puts "tweet to parse is: #{tweet["text"]}"
-    markov_map 
+    dict 
       |> add_text(tweet["text"])
       |> parse_tweet(rest)
   end
@@ -134,8 +125,8 @@ end # the Markov module declaration
 [times|files] = System.argv
 {times,_} = Integer.parse(times)
 
-mark = Markov.new
-mark = Markov.add_files(mark, files)
+# mark = Markov.new
+mark = Markov.add_files(files)
 
 Markov.generate_tweets(mark, times)
 
