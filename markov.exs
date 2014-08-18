@@ -16,11 +16,11 @@ defmodule Markov do
 
   def add_text(text) do
     # IO.puts "calling the agent's add_text"
-    Agent.get(@name, &do_add_text(&1, text))
+    Agent.update(@name, &do_add_text(&1, text))
   end
 
   def generate_tweet do
-    Agent.update(@name, &do_generate_tweet(&1))
+    Agent.get(@name, &do_generate_tweet(&1))
   end
 
   def dump() do
@@ -46,13 +46,14 @@ defmodule Markov do
     # IO.inspect dict
 
     words = List.flatten [:start, String.split(text), :end]
-    dict = add_words(dict, words)
+    add_words(dict, words)
+
   end
 
   # TODO: could have these be 
   # map, [:start, first_word | rest] do
   # map, [last_word, :end] do
-  # map, [word, word_after|rest] do, here calling with add_pair([word_after|rest]
+  # map, [word, word_after|rest] do, calling next: add_pair([word_after|rest]
 
   defp add_words(dict, [:start | [first_word|_]=rest]) do
     dict
@@ -80,8 +81,8 @@ defmodule Markov do
   def do_generate_tweet(dict) do
     #TODO: i don't like the repition with the logic in the called module
 
-    IO.puts "generating a tweet from"
-    IO.inspect dict
+    # IO.puts "generating a tweet from"
+    # IO.inspect dict
 
     case Dict.fetch(dict, :start) do
       {:ok, nexts} -> Dict.fetch(dict, :start)
@@ -158,16 +159,13 @@ end # the Markov module declaration
 [times|files] = System.argv
 {times,_} = Integer.parse(times)
 
-# the local version
-# mark = Markov.add_files(files)
-# Markov.generate_tweets(mark, times)
-
 Markov.start_link
-Markov.add_text("this is a possible tweet.")
-IO.inspect Markov.dump
-IO.puts Markov.generate_tweet
+# Markov.add_text("this is a possible tweet.")
+Markov.add_files(files)
+# IO.inspect Markov.dump
+# IO.puts Markov.generate_tweet
+Markov.generate_tweets(times)
 
-# Markov.add_files(files)
-# Markov.generate_tweets(times)
+
 
 
