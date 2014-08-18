@@ -14,9 +14,9 @@ defmodule Markov do
   # also leaving the parsing of the tweet file on the client. the server is
   # just where you add the tweets.
 
-  def add_text(text) do
-    # IO.puts "calling the agent's add_text"
-    Agent.update(@name, &do_add_text(&1, text))
+  def add_tweet(text) do
+    # IO.puts "calling the agent's add_tweet"
+    Agent.update(@name, &do_add_tweet(&1, text))
   end
 
   def generate_tweet do
@@ -37,20 +37,17 @@ defmodule Markov do
 
 
   # ###########################################################################
-  # do_add_text impl
+  # do_add_tweet impl
   # ###########################################################################
 
-  def do_add_text(dict \\ HashDict.new, text) do
-
-    # IO.puts "in the impl with #{text} and"
-    # IO.inspect dict
+  def do_add_tweet(dict \\ HashDict.new, text) do
 
     words = List.flatten [:start, String.split(text), :end]
     add_words(dict, words)
 
   end
 
-  # TODO: could have these be 
+  # could have these be 
   # map, [:start, first_word | rest] do
   # map, [last_word, :end] do
   # map, [word, word_after|rest] do, calling next: add_pair([word_after|rest]
@@ -79,17 +76,12 @@ defmodule Markov do
   # do_generate_tweet impl
   # ###########################################################################
   def do_generate_tweet(dict) do
+
     #TODO: i don't like the repition with the logic in the called module
+    {:ok, nexts} = Dict.fetch(dict, :start)
+    word = Random.sample(nexts)
+    next_word(dict, word)
 
-    # IO.puts "generating a tweet from"
-    # IO.inspect dict
-
-    case Dict.fetch(dict, :start) do
-      {:ok, nexts} -> Dict.fetch(dict, :start)
-                      word = Random.sample(nexts)
-                      next_word(dict, word)
-      :error -> "the start tag wasn't in the dict"
-    end
   end
 
   defp next_word(_, :end) do
@@ -99,8 +91,6 @@ defmodule Markov do
   defp next_word(dict, word) do
     {:ok, nexts} = Dict.fetch(dict, word)
     next = Random.sample(nexts)
-    # IO.puts "the word is #{word} and its possible followers are:"
-    # IO.inspect Dict.fetch(dict, next)
     "#{word} " <> next_word(dict, next)
   end
     
@@ -131,13 +121,11 @@ defmodule Markov do
     parse_tweet(tweets)
   end
 
-  # defp parse_tweet(dict, tweets) when length(tweets) == 0 do
   defp parse_tweet([]) do
   end
 
   defp parse_tweet([tweet|rest]) do
-    #IO.puts "tweet to parse is: #{tweet["text"]}"
-    add_text(tweet["text"])
+    add_tweet(tweet["text"])
     parse_tweet(rest)
   end
 
@@ -151,19 +139,13 @@ defmodule Markov do
     generate_tweets(times - 1)
   end
 
-  # #############################################################
-  # adding tweet text to the chain data 
-  # #############################################################
 end # the Markov module declaration
 
 [times|files] = System.argv
 {times,_} = Integer.parse(times)
 
 Markov.start_link
-# Markov.add_text("this is a possible tweet.")
 Markov.add_files(files)
-# IO.inspect Markov.dump
-# IO.puts Markov.generate_tweet
 Markov.generate_tweets(times)
 
 
