@@ -105,20 +105,30 @@ defmodule Markov do
   end
 
   def add_files([file|rest]) do
-    add_file(file)
+    # add_file(file)
+    add_file_by_line(file)
     add_files(rest)
   end
 
   def add_file(tweeter_file) do
     contents = File.read! tweeter_file
     # get rid of the first line, which isn't JSON
-    # TODO could read this file line by line, using pattern matching to
-    # find the _one_ line i want.
     [_,json_data] = Regex.run(~r/Grailbird.data.tweets_\d+_\d+ =(.*)/s,contents)
     tweets = ExJSON.parse(json_data, :to_map)
         # IO.puts "about to add tweets to dict"
         # Markov.dump(dict)
     parse_tweet(tweets)
+  end
+
+  def add_file_by_line(twitter_file) do
+    File.stream!(twitter_file)
+      |> Stream.map( fn line -> 
+           Regex.run(~r/\s+"text"\s+:\s+"(.*)",/s,line) 
+         end)
+      |> Stream.filter( fn x -> is_list x end) 
+      |> Stream.map( fn [_,tweet_text] -> tweet_text end)
+      |> Enum.to_list 
+      |> parse_tweet2
   end
 
   defp parse_tweet([]) do
@@ -127,6 +137,14 @@ defmodule Markov do
   defp parse_tweet([tweet|rest]) do
     add_tweet(tweet["text"])
     parse_tweet(rest)
+  end
+
+  defp parse_tweet2([]) do
+  end
+
+  defp parse_tweet2([tweet|rest]) do
+    add_tweet(tweet)
+    parse_tweet2(rest)
   end
 
   # generating multiple tweets
