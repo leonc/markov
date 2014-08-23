@@ -117,7 +117,8 @@ defmodule Markov do
     tweets = ExJSON.parse(json_data, :to_map)
         # IO.puts "about to add tweets to dict"
         # Markov.dump(dict)
-    parse_tweet(tweets)
+    just_text = Enum.map(tweets, fn tw -> tw["text"] end)
+    parse_tweet(just_text)
   end
 
   def add_file_by_line(twitter_file) do
@@ -128,23 +129,15 @@ defmodule Markov do
       |> Stream.filter( fn x -> is_list x end) 
       |> Stream.map( fn [_,tweet_text] -> tweet_text end)
       |> Enum.to_list 
-      |> parse_tweet2
+      |> parse_tweet
   end
 
   defp parse_tweet([]) do
   end
 
   defp parse_tweet([tweet|rest]) do
-    add_tweet(tweet["text"])
-    parse_tweet(rest)
-  end
-
-  defp parse_tweet2([]) do
-  end
-
-  defp parse_tweet2([tweet|rest]) do
     add_tweet(tweet)
-    parse_tweet2(rest)
+    parse_tweet(rest)
   end
 
   # generating multiple tweets
